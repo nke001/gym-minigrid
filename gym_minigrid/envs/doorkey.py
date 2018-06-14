@@ -7,7 +7,7 @@ class DoorKeyEnv(MiniGridEnv):
     """
 
     def __init__(self, size=8):
-        super().__init__(gridSize=size, maxSteps=4 * size)
+        super().__init__(gridSize=size, maxSteps= 4 * size * size)
 
     def _genGrid(self, width, height):
         # Create an empty grid
@@ -42,9 +42,9 @@ class DoorKeyEnv(MiniGridEnv):
             )
             if pos == self.startPos:
                 continue
-            if self.grid.get(*pos) != None:
+            if self.grid.get(pos[0], pos[1]) != None:
                 continue
-            self.grid.set(*pos, Key('yellow'))
+            self.grid.set(pos[0], pos[1], Key('yellow'))
             break
 
         self.mission = "use the key to open the door and then get to the goal"

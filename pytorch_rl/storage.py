@@ -43,7 +43,7 @@ class RolloutStorage(object):
         self.states[0].copy_(self.states[-1])
         self.masks[0].copy_(self.masks[-1])
 
-    def compute_returns(self, next_value, use_gae, gamma, tau):
+    def compute_returns(self, next_value, use_gae, gamma, tau, last_step= None,num_steps=None):
         if use_gae:
             self.value_preds[-1] = next_value
             gae = 0
@@ -52,10 +52,20 @@ class RolloutStorage(object):
                 gae = delta + gamma * tau * self.masks[step + 1] * gae
                 self.returns[step] = gae + self.value_preds[step]
         else:
-            self.returns[-1] = next_value
-            for step in reversed(range(self.rewards.size(0))):
-                self.returns[step] = self.returns[step + 1] * \
-                    gamma * self.masks[step + 1] + self.rewards[step]
+            if last_step is None:
+                self.returns[-1] = next_value
+                for step in reversed(range( self.rewards.size(0))):
+                    # only propgate to num_steps earlier
+                    self.returns[step] = self.returns[step + 1] * \
+                        gamma * self.masks[step + 1] + self.rewards[step]
+            else:
+                # set value for t+1 and then propagate back
+                self.returns[last_step + 1] = next_value
+                for step in reversed(range(last_step + 1 - num_steps, last_step + 1)):
+                    # only propgate to num_steps earlier
+                    self.returns[step] = self.returns[step + 1] * \
+                        gamma * self.masks[step + 1] + self.rewards[step]
+    
 
 
     def feed_forward_generator(self, advantages, num_mini_batch):

@@ -29,7 +29,7 @@ if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], 'Recurrent policy is not implemented for ACKTR'
 
 num_updates = int(args.num_frames) // args.num_steps // args.num_processes
-
+num_updates *= 10
 torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
@@ -43,7 +43,6 @@ except OSError:
 
 def main():
     os.environ['OMP_NUM_THREADS'] = '1'
-
     envs = [make_env(args.env_name, args.seed, i, args.log_dir) for i in range(args.num_processes)]
 
     if args.num_processes > 1:
@@ -79,7 +78,7 @@ def main():
         optimizer = optim.Adam(actor_critic.parameters(), args.lr, eps=args.eps)
     elif args.algo == 'acktr':
         optimizer = KFACOptimizer(actor_critic)
-
+    
     rollouts = RolloutStorage(args.num_steps, args.num_processes, obs_shape, envs.action_space, actor_critic.state_size)
     current_obs = torch.zeros(args.num_processes, *obs_shape)
 
@@ -103,6 +102,7 @@ def main():
         rollouts.cuda()
 
     start = time.time()
+    mask = torch.FloatTensor(48)
     for j in range(num_updates):
         for step in range(args.num_steps):
             # Sample actions
@@ -115,6 +115,8 @@ def main():
 
             # Obser reward and next obs
             obs, reward, done, info = envs.step(cpu_actions)
+            if done.sum() > 0:
+                import ipdb; ipdb.set_trace()
             reward = torch.from_numpy(np.expand_dims(np.stack(reward), 1)).float()
             episode_rewards += reward
 
@@ -136,15 +138,15 @@ def main():
 
             update_current_obs(obs)
             rollouts.insert(step, current_obs, states.data, action.data, action_log_prob.data, value.data, reward, masks)
+        
 
         next_value = actor_critic(
             Variable(rollouts.observations[-1], volatile=True),
             Variable(rollouts.states[-1], volatile=True),
             Variable(rollouts.masks[-1], volatile=True)
         )[0].data
-
+        
         rollouts.compute_returns(next_value, args.use_gae, args.gamma, args.tau)
-
         if args.algo in ['a2c', 'acktr']:
             values, action_log_probs, dist_entropy, states = actor_critic.evaluate_actions(
                 Variable(rollouts.observations[:-1].view(-1, *obs_shape)),
@@ -177,7 +179,6 @@ def main():
                 optimizer.acc_stats = True
                 fisher_loss.backward(retain_graph=True)
                 optimizer.acc_stats = False
-
             optimizer.zero_grad()
             (value_loss * args.value_loss_coef + action_loss - dist_entropy * args.entropy_coef).backward()
 
@@ -222,7 +223,6 @@ def main():
                     optimizer.step()
 
         rollouts.after_update()
-
         if j % args.save_interval == 0 and args.save_dir != "":
             save_path = os.path.join(args.save_dir, args.algo)
             try:
@@ -262,6 +262,7 @@ def main():
                 total_num_steps,
                 final_rewards.mean()
             )
-
+    
+    import ipdb; ipdb.set_trace()
 if __name__ == "__main__":
     main()

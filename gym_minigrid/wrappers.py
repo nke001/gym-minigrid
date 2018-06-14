@@ -92,7 +92,7 @@ class FlatObsWrapper(gym.core.ObservationWrapper):
         self.observation_space = spaces.Box(
             low=0,
             high=255,
-            shape=(1, imgSize + self.numCharCodes * self.maxStrLen),
+            shape=(1, imgSize),
             dtype='uint8'
         )
 
@@ -108,7 +108,7 @@ class FlatObsWrapper(gym.core.ObservationWrapper):
             assert len(mission) <= self.maxStrLen, "mission string too long"
             mission = mission.lower()
 
-            strArray = np.zeros(shape=(self.maxStrLen, self.numCharCodes), dtype='float32')
+            #strArray = np.zeros(shape=(self.maxStrLen, self.numCharCodes), dtype='float32')
 
             for idx, ch in enumerate(mission):
                 if ch >= 'a' and ch <= 'z':
@@ -116,11 +116,11 @@ class FlatObsWrapper(gym.core.ObservationWrapper):
                 elif ch == ' ':
                     chNo = ord('z') - ord('a') + 1
                 assert chNo < self.numCharCodes, '%s : %d' % (ch, chNo)
-                strArray[idx, chNo] = 1
+                #strArray[idx, chNo] = 1
 
             self.cachedStr = mission
-            self.cachedArray = strArray
+            #self.cachedArray = strArray
 
-        obs = np.concatenate((image.flatten(), self.cachedArray.flatten()))
+        obs = image.flatten() #np.concatenate((image.flatten(), self.cachedArray.flatten()))
 
         return obs

@@ -112,7 +112,7 @@ class MultiRoomEnv(MiniGridEnv):
                 doorColor = self._randElem(sorted(doorColors))
 
                 entryDoor = Door(doorColor)
-                self.grid.set(*room.entryDoorPos, entryDoor)
+                self.grid.set(room.entryDoorPos[0], room.entryDoorPos[1], entryDoor)
                 prevDoorColor = doorColor
 
                 prevRoom = roomList[idx-1]
@@ -127,7 +127,7 @@ class MultiRoomEnv(MiniGridEnv):
 
             # Make sure the goal doesn't overlap with the agent
             if self.goalPos != self.startPos:
-                self.grid.set(*self.goalPos, Goal())
+                self.grid.set(self.goalPos[0], self.goalPos[1], Goal())
                 break
 
         self.mission = 'traverse the rooms to get to the goal'

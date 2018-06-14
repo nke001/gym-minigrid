@@ -289,7 +289,7 @@ class Box(WorldObj):
 
     def toggle(self, env, pos):
         # Replace the box by its contents
-        env.grid.set(*pos, self.contains)
+        env.grid.set(pos[0], pos[1], self.contains)
         return True
 
 class Grid:
@@ -541,12 +541,12 @@ class MiniGridEnv(gym.Env):
         # Pick up an object
         pickup = 3
         # Drop an object
-        drop = 4
+        drop = 0
         # Toggle/activate an object
-        toggle = 5
+        toggle = 4
 
         # Wait/stay put/do nothing
-        wait = 6
+        wait = 0
 
     def __init__(self, gridSize=16, maxSteps=100):
         # Action enumeration for this environment
@@ -666,7 +666,7 @@ class MiniGridEnv(gym.Env):
                 continue
             break
 
-        self.grid.set(*pos, obj)
+        self.grid.set(pos[0], pos[1], obj)
 
         return pos
 
@@ -781,12 +781,12 @@ class MiniGridEnv(gym.Env):
             if fwdCell and fwdCell.canPickup():
                 if self.carrying is None:
                     self.carrying = fwdCell
-                    self.grid.set(*fwdPos, None)
+                    self.grid.set(fwdPos[0], fwdPos[1], None)
 
         # Drop an object
         elif action == self.actions.drop:
             if not fwdCell and self.carrying:
-                self.grid.set(*fwdPos, self.carrying)
+                self.grid.set(fwdPos[0], fwdPos[1], self.carrying)
                 self.carrying = None
 
         # Toggle/activate an object
@@ -825,9 +825,9 @@ class MiniGridEnv(gym.Env):
         # in the agent's partially observable view
         agentPos = grid.width // 2, grid.height - 1
         if self.carrying:
-            grid.set(*agentPos, self.carrying)
+            grid.set(agentPos[0], agentPos[1], self.carrying)
         else:
-            grid.set(*agentPos, None)
+            grid.set(agentPos[0], agentPos[1], None)
 
         # Encode the partially observable view into a numpy array
         image = grid.encode()

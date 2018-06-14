@@ -77,12 +77,10 @@ class Policy(FFPolicy):
     def forward(self, inputs, states, masks):
         batch_numel = reduce(operator.mul, inputs.size()[1:], 1)
         inputs = inputs.view(-1, batch_numel)
-
         x = self.fc1(inputs)
         x = F.tanh(x)
         x = self.fc2(x)
         x = F.tanh(x)
-
         assert inputs.size(0) == states.size(0)
         states = self.gru(x, states * masks)
 
